@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  first_name String
+  last_name  String
+  email      String     @unique
+  password   String
+  registered DateTime   @default(now())
+  trackers   trackers[]
+}
+
+model trackers {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String   @db.ObjectId
+  name      String   @default("New Tracker")
+  frequency Int      @default(0)
+  user      user     @relation(fields: [user_id], references: [id])
+  created   DateTime @default(now())
+}
