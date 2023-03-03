@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
+const router = express.Router();
 var cors = require("cors");
 let bodyParser = require("body-parser");
 let multer = require("multer");
 let forms = multer();
+const serverless = require("serverless-http");
 
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
@@ -39,11 +41,11 @@ app.use(express.json());
 
 const port = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
+router.get("/", (req, res) => {
     res.send("Tracker is running");
 });
 
-app.post("/registerUser", async (req, res) => {
+router.post("/registerUser", async (req, res) => {
     const { email, password, first_name, last_name } = req.body;
     if (!email || !password || !first_name || !last_name)
         return res.status(400).send({ status: 400, msg: "Invalid data" });
@@ -67,7 +69,7 @@ app.post("/registerUser", async (req, res) => {
         .send({ status: 201, msg: "User created. Please Login." });
 });
 
-app.post("/checkUser", async (req, res) => {
+router.post("/checkUser", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password)
         return res.status(400).send({ status: 400, msg: "Invalid data" });
@@ -108,7 +110,7 @@ app.post("/checkUser", async (req, res) => {
     }
 });
 
-app.post("/addTracker", async (req, res) => {
+router.post("/addTracker", async (req, res) => {
     const { email, tracker_name, token } = req.body;
     if (!email || !tracker_name || !token)
         return res.status(400).send({ status: 400, msg: "Invalid data" });
@@ -146,7 +148,7 @@ app.post("/addTracker", async (req, res) => {
     }
 });
 
-app.delete("/deleteTracker", async (req, res) => {
+router.delete("/deleteTracker", async (req, res) => {
     const { email, tracker_id, token } = req.body;
     if (!email || !tracker_id || !token)
         return res.status(400).send({ status: 400, msg: "Invalid data" });
@@ -199,7 +201,7 @@ app.delete("/deleteTracker", async (req, res) => {
     }
 });
 
-app.get("/track", async (req, res) => {
+router.get("/track", async (req, res) => {
     const { id } = req.query;
     try {
         const tracker = await prisma.trackers.findUnique({
@@ -227,7 +229,7 @@ app.get("/track", async (req, res) => {
     res.sendFile("/resources/1x1.png", { root: process.cwd() });
 });
 
-app.get("/getTrackers", async (req, res) => {
+router.get("/getTrackers", async (req, res) => {
     const { email, token } = req.query;
     if (!email || !token)
         return res.status(400).send({ status: 400, msg: "Invalid data" });
@@ -260,6 +262,10 @@ app.get("/getTrackers", async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log("Server is running on port " + port);
-});
+app.use("/.netlify/functions/api", router);
+
+// app.listen(port, () => {
+//     console.log("Server is running on port " + port);
+// });
+
+module.exports.handlers = serverless(app);
